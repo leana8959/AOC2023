@@ -48,16 +48,18 @@ pGame = do
   Game i <$> pSet `sepBy1` lexeme ";"
 
 pAll :: Parser [Game]
-pAll = (pGame `sepBy1` many eol) <* eof
+pAll = (pGame `sepEndBy1` many eol) <* eof
 
-go s = case (runParser pAll "" s) of
-  Left err -> undefined
+go :: String -> [Game]
+go s = case runParser pAll "" s of
+  Left _ -> undefined
   Right r -> r
 
 --------------
 -- Solution --
 --------------
 type RGB = [Int]
+
 toRgb :: RGB -> Set -> RGB
 toRgb acc [] = acc
 toRgb [r, g, b] (x : xs) =
@@ -75,8 +77,17 @@ mergeRgb = zipWith max
 maxSet :: [Set] -> RGB
 maxSet = foldl1 mergeRgb . map (toRgb [0, 0, 0])
 
+--------------
+-- Part one --
+--------------
 filterGame :: (RGB -> Bool) -> [Game] -> [Game]
 filterGame thres = filter (\(Game _ s) -> thres (maxSet s))
+
+--------------
+-- Part two --
+--------------
+powerGame :: [Game] -> [Int]
+powerGame = map (\(Game _ s) -> product (maxSet s))
 
 main :: IO ()
 main = do
@@ -88,11 +99,14 @@ main = do
   let parsed = go t
 
   let one =
-        filterGame (all (uncurry (>=)) . zip [12, 13, 14]) parsed
-          <&> (\(Game i _) -> i)
-          & sum
+        sum
+          $ (\(Game i _) -> i)
+          <$> filterGame (all (uncurry (>=)) . zip [12, 13, 14]) parsed
+
+  let two = sum . powerGame $ parsed
 
   hspec
-    $ describe "Day1"
+    $ describe "Day2"
     $ do
       it "part one" $ one `shouldBe` 3035
+      it "part two" $ two `shouldBe` 66027
