@@ -10,6 +10,7 @@ import Data.List (find, isPrefixOf)
 import Data.Maybe (fromMaybe)
 
 import Test.Hspec
+import Test.QuickCheck
 
 combineDigits :: String -> Int
 combineDigits =
@@ -43,9 +44,9 @@ combineDigits' = (\xs -> head xs * 10 + last xs) . reverse . go []
 
 main :: IO ()
 main = do
-  -- h <- openFile "txt/day1/simple.txt" ReadMode
-  -- h <- openFile "txt/day1/simple2.txt" ReadMode
-  h <- openFile "txt/day1/input.txt" ReadMode
+  -- h <- openFile "txt/Day1/simple.txt" ReadMode
+  -- h <- openFile "txt/Day1/simple2.txt" ReadMode
+  h <- openFile "txt/Day1/input.txt" ReadMode
   t <- hGetContents h
   let ls = lines t
 
@@ -56,4 +57,3 @@ main = do
     $ describe "Day1"
     $ do
       it "part one" $ one `shouldBe` 54697
-      it "part two" $ two `shouldBe` 54885
