@@ -1,11 +1,15 @@
-{-# LANGUAGE MultiWayIf #-}
-
 module Main where
 
-import Data.Char (digitToInt, isDigit)
+import Control.Monad (guard)
+import Data.Functor
 
-import Data.List (isPrefixOf)
 import System.IO (IOMode (ReadMode), hGetContents, openFile)
+
+import Data.Char (digitToInt, isDigit)
+import Data.List (find, isPrefixOf)
+import Data.Maybe (fromMaybe)
+
+import Test.Hspec
 
 combineDigits :: String -> Int
 combineDigits =
@@ -15,20 +19,24 @@ combineDigits =
 go :: [Int] -> String -> [Int]
 go acc [] = acc
 go acc cs =
-  go
-    if
-      | "one" `isPrefixOf` cs -> 1 : acc
-      | "two" `isPrefixOf` cs -> 2 : acc
-      | "three" `isPrefixOf` cs -> 3 : acc
-      | "four" `isPrefixOf` cs -> 4 : acc
-      | "five" `isPrefixOf` cs -> 5 : acc
-      | "six" `isPrefixOf` cs -> 6 : acc
-      | "seven" `isPrefixOf` cs -> 7 : acc
-      | "eight" `isPrefixOf` cs -> 8 : acc
-      | "nine" `isPrefixOf` cs -> 9 : acc
-      | isDigit (head cs) -> digitToInt (head cs) : acc
-      | otherwise -> acc
-    (tail cs)
+  let
+    infixr 1 ?:
+    (?:) = flip fromMaybe
+
+    ws =
+      zip
+        [1 ..]
+        ["one", "two", "three", "four", "five", "six", "seven", "eight", "nine"]
+
+    parseSpelled =
+      find ((`isPrefixOf` cs) . snd) ws <&> \(i, w) -> (i : acc, tail cs)
+
+    parseNumber =
+      guard (isDigit (head cs)) $> (digitToInt (head cs) : acc, tail cs)
+
+    skip = (acc, tail cs)
+  in
+    uncurry go (parseSpelled ?: parseNumber ?: skip)
 
 combineDigits' :: String -> Int
 combineDigits' = (\xs -> head xs * 10 + last xs) . reverse . go []
@@ -41,8 +49,11 @@ main = do
   t <- hGetContents h
   let ls = lines t
 
-  print "part one"
-  print $ sum $ combineDigits <$> ls
+  let one = sum $ combineDigits <$> ls
+  let two = sum $ combineDigits' <$> ls
 
-  print "part two"
-  print $ sum $ combineDigits' <$> ls
+  hspec
+    $ describe "Day1"
+    $ do
+      it "part one" $ one `shouldBe` 54697
+      it "part two" $ two `shouldBe` 54885
