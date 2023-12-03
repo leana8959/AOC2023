@@ -19,20 +19,23 @@ isSymbol c = all ($ c) [not . C.isAlpha, not . C.isDigit, (/= '.')]
 parsePoints :: String -> Symbols
 parsePoints =
   let
-    parseLine lno = map (\(cno, c) -> (c, Point cno lno)) . filter (isSymbol . snd) . zip [1 ..]
+    parseLine lno l = [(c, Point cno lno) | (cno, c) <- zip [1 ..] l, isSymbol c]
+    parseLines ls = [line | (lno, l) <- zip [1 ..] ls, line <- parseLine lno l]
   in
-    concatMap (uncurry parseLine) . zip [1 ..] . lines
+    parseLines . lines
 
 parseNumbers :: String -> Numbers
 parseNumbers =
   let
-    parseLine lno =
-      map (\l -> let (is, cs) = unzip l in (read cs, Range (head is, last is) lno))
-        . filter (\((_, c) : _) -> C.isDigit c)
-        . groupBy (\(_, a) (_, b) -> C.isDigit a && C.isDigit b)
-        . zip [1 ..]
+    parseLine lno l =
+      [ (read cs, Range (head is, last is) lno)
+      | g@((_, c) : _) <- groupBy (\(_, a) (_, b) -> C.isDigit a && C.isDigit b) $ zip [1 ..] l
+      , C.isDigit c
+      , let (is, cs) = unzip g
+      ]
+    parseLines ls = [line | (lno, l) <- zip [1 ..] ls, line <- parseLine lno l]
   in
-    concatMap (uncurry parseLine) . zip [1 ..] . lines
+    parseLines . lines
 
 isNeighbor :: Point -> Range -> Bool
 isNeighbor (Point x y) (Range (a, b) c) = y `elem` [c - 1 .. c + 1] && x `elem` [a - 1 .. b + 1]
