@@ -57,10 +57,10 @@ one =
     sum . map solveLine
 
 two :: [Card] -> Int
-two cs =
+two =
   let
     solveLine (Card _ ws ns) = count id . map (`S.member` ws) $ ns
-    copies = map (const 1) cs
+    copies = repeat 1
 
     inc _ xs 0 = xs
     inc _ [] _ = []
@@ -74,7 +74,7 @@ two cs =
       in
         k : aux cs ks'
   in
-    sum $ aux cs copies
+    sum . flip aux copies
 
 main :: IO ()
 main = do
